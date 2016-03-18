@@ -63,7 +63,9 @@ def parse_others(data, other_gtps, parent_1_gtp, parent_2_gtp):
         k_data = data[k].split(":")
         k_gtp = k_data[0]
         
-        if "." in k_gtp: num_miss += 1
+        if "." in k_gtp:
+            num_miss += 1
+            continue
         elif is_hetero(k_gtp): num_het+=1
         else: num_hom+=1
         
@@ -73,7 +75,9 @@ def parse_others(data, other_gtps, parent_1_gtp, parent_2_gtp):
         
         total_dp += int(k_data[2])
     
-    avg_dp = total_dp / len(other_gtps)
+    total_valid = num_hom+num_het
+    if total_valid>0:
+        avg_dp = total_dp / total_valid
     
     return (num_miss, num_hom, num_het, parent_1_like, parent_2_like, alike, total_dp, avg_dp)
 
@@ -103,7 +107,10 @@ for i, line in enumerate(open(inputfilename, 'r')):
         
         sys.stdout.write(parent_1+"\t"+parent_1+"_cov\t"+parent_1+"_het\t"+\
                          parent_2+"\t"+parent_2+"_cov\t"+parent_2+"_het\t"+\
-                         "contig\tpos\tREF\tALT\tqual\ttype\n")
+                         "contig\tpos\tREF\tALT\tqual\ttype\t"+\
+                         "#miss\t#hom\t#het\t#"+parent_1+"\t#"+parent_2+"\t#alike\t"+\
+                         "totalDP\tavgDP\n")
+        
     # Variant
     else:
         total_variants += 1
