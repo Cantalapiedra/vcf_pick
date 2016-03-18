@@ -10,6 +10,7 @@ other_gtps = {}
 parent_1_i=-1
 parent_2_i=-1
 total_variants = 0
+total_missing = 0
 total_polymorphic = 0
 total_homozygots = 0
 total_indels = 0
@@ -80,6 +81,7 @@ inputfilename=sys.argv[1]
 parent_1=sys.argv[2]
 parent_2=sys.argv[3]
 allow_het=sys.argv[4] # yes no
+allow_miss="no"
 
 sys.stderr.write("Parents to compare: "+parent_1+" and "+parent_2+"\n")
 sys.stderr.write("parse_vcf: Processing "+inputfilename+"\n")
@@ -111,6 +113,10 @@ for i, line in enumerate(open(inputfilename, 'r')):
         parent_2_data = data[parent_2_i].split(":")
         parent_1_gtp = parent_1_data[0]
         parent_2_gtp = parent_2_data[0]
+        
+        if "." in parent_1_gtp or "." in parent_2_gtp:
+            total_missing += 1
+            if allow_miss == "no": continue
         
         if parent_1_gtp == parent_2_gtp: continue
         
@@ -154,6 +160,7 @@ for i, line in enumerate(open(inputfilename, 'r')):
                         "\t"+str(total_dp)+"\t"+str(avg_dp)+"\n")
     
 sys.stderr.write("\nTotal variants: "+str(total_variants)+"\n")
+sys.stderr.write("Total missing: "+str(total_missing)+"\n")
 sys.stderr.write("Total polymorphic: "+str(total_polymorphic)+"\n")
 sys.stderr.write("Total homozygots: "+str(total_homozygots)+"\n")
 sys.stderr.write("Total SNPs: "+str(total_snps)+"\n")
