@@ -1,7 +1,10 @@
 # vcf_pick
 Tools to parse VCF for specific purposes
 
+### check_polymorph
+
 check_polymorph
+===============
 
 It is a script which outputs only polymorphic variants between two specified lines.
 
