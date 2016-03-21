@@ -7,6 +7,8 @@ Tools to parse VCF for specific purposes
 
 It is a script which outputs only polymorphic variants between two specified lines.
 
+> blockquote
+
 no heteros allowed
 ./check_polymorph.sh test_01.vcf Parent2 Parent42 no
 
