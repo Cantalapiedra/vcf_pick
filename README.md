@@ -12,10 +12,12 @@ Parameters are:
 - Second line/genotype to be compared
 - Output heterozygous variants (yes/no)
 
-no heteros allowed
+Examples:
+
+1. no heteros allowed
 
 `./check_polymorph.sh test_01.vcf Parent2 Parent42 no`
 
-allow heteros
+2. allow heteros
 
 `./check_polymorph.sh test_01.vcf Parent1 Parent42 yes`
