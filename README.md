@@ -13,7 +13,9 @@ It is a script which outputs only polymorphic variants between two specified lin
 `code`
 
 no heteros allowed
-./check_polymorph.sh test_01.vcf Parent2 Parent42 no
+
+`./check_polymorph.sh test_01.vcf Parent2 Parent42 no`
 
 allow heteros
-./check_polymorph.sh test_01.vcf Parent1 Parent42 yes
+
+`./check_polymorph.sh test_01.vcf Parent1 Parent42 yes`
