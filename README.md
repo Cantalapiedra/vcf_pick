@@ -14,10 +14,10 @@ Parameters are:
 
 Examples, filtering out heterozygous variants:
 
-`./check_polymorph.sh test_01.vcf Parent2 Parent42 no`
+`./check_polymorph.sh test/test_01.vcf Parent2 Parent42 no`
 
 ##### parse_snpeff_genes
 
 It simply outputs the number of occurences of a kind of SNP effect for each isoform.
 
-`./parse_snpeff_genes.py test_02_snpeff.vcf`
+`./parse_snpeff_genes.py test/test_02_snpeff.vcf`
