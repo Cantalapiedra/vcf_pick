@@ -20,4 +20,4 @@ Examples, filtering out heterozygous variants:
 
 It simply outputs the number of occurences of a kind of SNP effect for each isoform.
 
-`./parse_snpeff_genes.py test_02_snpeff.vcf
+`./parse_snpeff_genes.py test_02_snpeff.vcf`
