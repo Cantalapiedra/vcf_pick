@@ -9,8 +9,6 @@ from optparse import OptionParser
 from src.util.vcf_util import *
 from src.util.util import *
 
-GENES = 0
-ISOFS = 1
 
 def _print_parameters(options):
     options_dict = options.__dict__
@@ -22,17 +20,14 @@ def _print_parameters(options):
     return
 
 ## Argument parsing
-__usage = "usage: parse_genes_variants.py [VCF_FILE] [OPTIONS]"
+__usage = "usage: parse_variants.py [VCF_FILE] [OPTIONS]"
 
 optParser = OptionParser(__usage)
 
 optParser.add_option('-H', '--header', action='store', dest='vcf_header', type='string', \
                      help='VCF header if VCF_FILE does not include header.')
 
-optParser.add_option('-g', '--genes_list', action='store', dest='genes_list', type='string', \
-                     help='')
-
-optParser.add_option('-i', '--isof_list', action='store', dest='isof_list', type='string', \
+optParser.add_option('-v', '--variants_list', action='store', dest='variants_list', type='string', \
                      help='')
 
 optParser.add_option('-t', '--samples_translation', action='store', dest='samples_translation', type='string', \
@@ -52,6 +47,8 @@ optParser.add_option('--maf', action='store', dest='maf', type='float', help='')
 
 optParser.add_option('-m', '--show_monomorph', action='store_true', dest='show_monomorph', help='')
 
+optParser.add_option('-e', '--show_effects', action='store_true', dest='show_effects', help='')
+
 (options, arguments) = optParser.parse_args()
 
 if not arguments or len(arguments)==0:
@@ -62,17 +59,11 @@ vcf_filename = arguments[0] # This is mandatory
 if options.vcf_header: vcf_header = options.vcf_header
 else: vcf_header = ""
 
-if options.genes_list:
-    if options.isof_list:
-        raise Exception("Only a list of genes or a list of isoforms a list of contigs should be provided, not both.")
-    query_file = options.genes_list
-    query_type = GENES
-elif options.isof_list:
-    query_file = options.isof_list
-    query_type = ISOFS
+if options.variants_list:
+    query_file = options.variants_list
 else: query_file = ""
 
-if query_file == "": raise Exception("Either a list of genes or isoforms is needed.")
+if query_file == "": raise Exception("A list of contigs is needed.")
 
 if options.samples_translation: samples_translation = options.samples_translation
 else: samples_translation = ""
@@ -95,12 +86,13 @@ else: maf = 0.0
 if options.show_monomorph: show_monomorph = options.show_monomorph
 else: show_monomorph = False
 
+if options.show_effects: show_effects = options.show_effects
+else: show_effects = False
+
 ###############
 ###############
 
-##
-
-def print_variants_genes(variants_dict, genotypes_dict, samples_list, output_fmt = "tabular"):
+def print_variants_contigs(variants_dict, genotypes_dict, samples_list, show_effects, output_fmt = "tabular"):
     
     # Prepare output lines
     outputs_list = []
@@ -108,35 +100,46 @@ def print_variants_genes(variants_dict, genotypes_dict, samples_list, output_fmt
         variant = variants_dict[variant_id]
         
         output_list = []
-        for eff in variant["effs"]:
-            if query_type == GENES:
-                output_list = [variant_id, eff["eff_isof"], eff["eff_type"], ",".join(variant["eff_x"]), \
-                                variant["ref"], variant["alt"], eff["eff_aa"], \
-                                variant["contig"], variant["pos"]]
-            elif query_type == ISOFS:
-                output_list = [variant_id, eff["eff_isof"], eff["eff_type"], ",".join(variant["eff_x"]), \
-                                variant["ref"], variant["alt"], eff["eff_aa"], \
-                                variant["contig"], variant["pos"]]
-            else:
-                sys.stderr.write("Unrecognized query type "+query_type+"\n")
-            
-            outputs_list.append(output_list)
         
+        eff_type = []
+        eff_isof = []
+        eff_aa = []
+        
+        if show_effects:
+            if len(variant["effs"]) == 0:
+                eff_type = ["-"]
+                eff_isof = ["-"]
+                eff_aa = ["-"]
+            else:
+                for eff in variant["effs"]:
+                    eff_type.append(eff["eff_type"])
+                    eff_isof.append(eff["eff_isof"])
+                    eff_aa.append(eff["eff_aa"])
+            
+            output_list = [variant_id, variant["contig"], variant["pos"], variant["ref"], variant["alt"], \
+                           ",".join(eff_type), ",".join(eff_isof), ",".join(eff_aa), ",".join(variant["eff_x"])]
+        else:
+            output_list = [variant_id, variant["contig"], variant["pos"], variant["ref"], variant["alt"]]
+        
+        outputs_list.append(output_list)
+    
     # Sort the list of variants to output
     # by isoform, contig and position
-    outputs_list = sorted(outputs_list, key=lambda x: (x[1], x[7], int(x[8])))  
+    outputs_list = sorted(outputs_list, key=lambda x: (x[1], int(x[2])))  
     
     ### Print output
     genotypes_index_list = sorted(genotypes_dict, key=lambda x: genotypes_dict[x]["good_name"])
     
     # Header
-    sys.stdout.write("#\tisof\teffect\tref\talt\tchange\tcontig\tpos")
+    if show_effects:
+        sys.stdout.write("#\tcontig\tpos\tref\talt\teffect\tisof\tchange\tother")
+    else:
+        sys.stdout.write("#\tcontig\tpos\tref\talt")
+    
     if output_fmt == "tabular":
         for sample in samples_list:
             sys.stdout.write("\t"+sample+"\t")
-        #for genotype in genotypes_index_list:
-        #    sys.stdout.write("\t"+genotypes_dict[genotype]["good_name"]+"\t")
-            
+        
     sys.stdout.write("\n")
     
     # Data
@@ -168,8 +171,7 @@ def print_variants_genes(variants_dict, genotypes_dict, samples_list, output_fmt
                 for genotype in genotypes_dict:
                     if genotypes_dict[genotype]["good_name"] == sample:
                         sys.stdout.write("\t"+genotypes_dict[genotype][var_id]+"\t")
-            #for genotype in genotypes_index_list:
-            #    sys.stdout.write("\t"+genotypes_dict[genotype][var_id]+"\t")
+                        
             sys.stdout.write("\n")
         
         else:
@@ -179,9 +181,7 @@ def print_variants_genes(variants_dict, genotypes_dict, samples_list, output_fmt
 
 ##
 
-def parse_effects_genes(effs_list, query_type, query_list, total_variants, variant_dict):
-    retValue = False
-    
+def parse_effects_contig(effs_list, variant_dict):
     for eff in effs_list:
         eff_data = eff.split("(")
         eff_fields = eff_data[1].split("|")
@@ -189,21 +189,12 @@ def parse_effects_genes(effs_list, query_type, query_list, total_variants, varia
         eff_type = eff_data[0]
         eff_gene = eff_fields[SNPEFF_GENE_POS]
         eff_isof = eff_fields[SNPEFF_ISOF_POS]
-        
-        if query_type == GENES and (eff_gene not in query_list): continue
-        if query_type == ISOFS and (eff_isof not in query_list): continue
-        
-        if not retValue:
-            retValue = True
-            total_variants+=1
-            var_id = total_variants
-            variant_dict["var_id"] = var_id
-        
         eff_aa = eff_fields[SNPEFF_AA_POS]
+        
         eff_dict = {'eff_gene':eff_gene, 'eff_type':eff_type, 'eff_isof':eff_isof, 'eff_aa':eff_aa}
         variant_dict["effs"].append(eff_dict)
     
-    return retValue
+    return
 
 ###############
 ###############
@@ -212,7 +203,7 @@ _print_parameters(options)
 
 #### Parse queries file
 ####
-query_list = parse_queries_file(query_file)
+query_list = parse_queries_file(query_file, keys=(1,2))
 
 #### Parse samples translation
 ####
@@ -253,31 +244,27 @@ try:
         if not header_found:
             raise Exception("No header found nor provided for VCF data.")
         
-        variant_dict = {'var_id':-1, 'contig':line_data[VCF_CONTIG_COL], 'pos':line_data[VCF_POS_COL], \
+        contig = line_data[VCF_CONTIG_COL]
+        pos = line_data[VCF_POS_COL]
+        
+        if not [contig, pos] in query_list: continue
+        
+        total_variants+=1
+        var_id = total_variants
+        
+        variant_dict = {'var_id':var_id, 'contig':contig, 'pos':pos, \
                         'ref':line_data[VCF_REF_COL], 'alt':line_data[VCF_ALT_COL], \
                         'alleles':{}, 'effs':[], 'eff_x':[]}
         
         info = line_data[VCF_INFO_COL]
-        # The split(";")[0] is to avoid fields beyond EFF= (like LOF=)
-        if (not snpeff_field_found) and SNPEFF_FIELD in info:
-            snpeff_field_found = True
         
-        if not SNPEFF_FIELD in info:
-            sys.stderr.write("WARNING: VCF record withouth snpEff field ("+SNPEFF_FIELD+") found: "+line)
-            continue
-        
-        effs_list = info.split(SNPEFF_FIELD)[1].split(";")[0].split(SNPEFF_EFF_SEP)
-        
-        if not parse_effects_genes(effs_list, query_type, query_list, total_variants, variant_dict):
-            continue
-        
-        var_id = variant_dict["var_id"]
-        total_variants = var_id
-        
-        for snpeff_data in info.split(SNPEFF_FIELD)[1].split(";")[1:]:
-            variant_dict["eff_x"].append(snpeff_data[:3])
-        
-        if len(variant_dict["eff_x"]) == 0: variant_dict["eff_x"] = ["-"]
+        if show_effects and SNPEFF_FIELD in info:
+            effs_list = info.split(SNPEFF_FIELD)[1].split(";")[0].split(SNPEFF_EFF_SEP)
+            parse_effects_contig(effs_list, variant_dict)
+            
+            for snpeff_data in info.split(SNPEFF_FIELD)[1].split(";")[1:]:
+                variant_dict["eff_x"].append(snpeff_data[:3])
+            if len(variant_dict["eff_x"]) == 0: variant_dict["eff_x"] = ["-"]
         
         alleles = parse_alleles(line_data, genotypes_dict)
         
@@ -288,14 +275,10 @@ try:
             for allele in alleles:
                 for j in alleles[allele]:
                     genotypes_dict[j][var_id] = allele
-
-    if not snpeff_field_found:
-        raise Exception("snpEff field ("+SNPEFF_FIELD+") \
-                        should be present to parse genes info.\n")
     
     #### Output
     ####
-    print_variants_genes(variants_dict, genotypes_dict, samples_list, output_format)
+    print_variants_contigs(variants_dict, genotypes_dict, samples_list, show_effects, output_format)
     
     sys.stderr.write("Total variants read: "+str(total_variants)+"\n")
     sys.stderr.write("Finished.\n")
