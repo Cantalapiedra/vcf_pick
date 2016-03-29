@@ -46,6 +46,6 @@ The three previous scripts can be provided of additional parameters:
 - A list of samples to output, excluding the ones not in such list.
 - A list of tuples to translate the name from the VCF file (often a codename) to another name (a common sample name).
 - Three percentage thresholds to filter out variants:
--- Maximum heterozygous genotypes allowed.
--- Maximum missing data genotypes allowed.
--- Minimum allele frequency of each allele allowed.
+  - Maximum heterozygous genotypes allowed.
+  - Maximum missing data genotypes allowed.
+  - Minimum allele frequency of each allele allowed.
