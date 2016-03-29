@@ -31,3 +31,21 @@ It allows to output variants and effects found for each gene, in three output fo
 
 `./parse_genes_variants.py test_02_snpeff.vcf -H test_02_snpeff.vcf.header -i isof_list.01.tab -s samples.translation -f tabular`
 TODO: test parameters
+
+##### parse_contigs_variants
+
+As the previous script, but provided of a list of contigs (chr) instead of genes.
+It does not depend on having snpEff annotation.
+
+##### parse_variants
+
+As the previous ones, but provided of a list of variants (contig or chr, position).
+It does not depend on having snpEff annotation.
+
+The three previous scripts can be provided of additional parameters:
+- A list of samples to output, excluding the ones not in such list.
+- A list of tuples to translate the name from the VCF file (often a codename) to another name (a common sample name).
+- Three percentage thresholds to filter out variants:
+-- Maximum heterozygous genotypes allowed.
+-- Maximum missing data genotypes allowed.
+-- Minimum allele frequency of each allele allowed.
