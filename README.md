@@ -49,3 +49,10 @@ The three previous scripts can be provided of additional parameters:
   - Maximum heterozygous genotypes allowed.
   - Maximum missing data genotypes allowed.
   - Minimum allele frequency of each allele allowed.
+In addition, monomorphic variants are excluded from the output, except if the "-m" flag is included in the options.
+Furthermore, parse_contigs_variants and parse_variants can be run with the "-e" option (to show snpEff annotation if present in the VCF file) or without it (to hide the snpEff annotation).
+Finally, all three scripts can produce three output formats (specified along the option "-f"):
+- "summary": output only the variants, without alleles and genotypes.
+- "detail": below each variant, a row for each allele is shown, along with the genotypes of each allele.
+- "tabular": along each variant, a column is added to include the allele of each genotype.
+
