@@ -6,8 +6,7 @@
 import sys, traceback
 from optparse import OptionParser
 
-from src.util.vcf_util import *
-from src.util.util import *
+from src.output import *
 
 def _print_parameters(options):
     options_dict = options.__dict__
@@ -29,6 +28,9 @@ optParser.add_option('-H', '--header', action='store', dest='vcf_header', type='
 optParser.add_option('-c', '--contigs_list', action='store', dest='contigs_list', type='string', \
                      help='')
 
+optParser.add_option('-v', '--variants_list', action='store', dest='variants_list', type='string', \
+                     help='')
+
 optParser.add_option('-t', '--samples_translation', action='store', dest='samples_translation', type='string', \
                      help='')
 
@@ -48,6 +50,12 @@ optParser.add_option('-m', '--show_monomorph', action='store_true', dest='show_m
 
 optParser.add_option('-e', '--show_effects', action='store_true', dest='show_effects', help='')
 
+optParser.add_option('-b', '--biallelic', action='store_true', dest='biallelic', help='')
+
+optParser.add_option('-n', '--numeric', action='store_true', dest='numeric', help='')
+
+optParser.add_option('-k', '--cluster_samples', action='store_true', dest='cluster_samples', help='')
+
 (options, arguments) = optParser.parse_args()
 
 if not arguments or len(arguments)==0:
@@ -62,7 +70,12 @@ if options.contigs_list:
     query_file = options.contigs_list
 else: query_file = ""
 
-if query_file == "": raise Exception("A list of contigs is needed.")
+if options.variants_list:
+    variants_file = options.variants_list
+else: variants_file = ""
+
+if query_file == "" and variants_file == "":
+    raise Exception("Either a list of contigs or of variants is required.")
 
 if options.samples_translation: samples_translation = options.samples_translation
 else: samples_translation = ""
@@ -73,13 +86,13 @@ else: output_format = "tabular"
 if options.samples_filename: samples_filename = options.samples_filename
 else: samples_filename = ""
 
-if options.max_missing: max_missing = options.max_missing
+if options.max_missing or options.max_missing == 0.0: max_missing = options.max_missing
 else: max_missing = 1.0
 
-if options.max_heteros: max_heteros = options.max_heteros
+if options.max_heteros or options.max_heteros == 0.0: max_heteros = options.max_heteros
 else: max_heteros = 1.0
 
-if options.maf: maf = options.maf
+if options.maf or options.maf == 0.0: maf = options.maf
 else: maf = 0.0
 
 if options.show_monomorph: show_monomorph = options.show_monomorph
@@ -88,121 +101,36 @@ else: show_monomorph = False
 if options.show_effects: show_effects = options.show_effects
 else: show_effects = False
 
-###############
-###############
+if options.biallelic: biallelic = "bi"
+else: biallelic = "mono"
 
-def print_variants_contigs(variants_dict, genotypes_dict, samples_list, show_effects, output_fmt = "tabular"):
-    
-    # Prepare output lines
-    outputs_list = []
-    for variant_id in variants_dict:
-        variant = variants_dict[variant_id]
-        
-        output_list = []
-        
-        eff_type = []
-        eff_isof = []
-        eff_aa = []
-        
-        if show_effects:
-            if len(variant["effs"]) == 0:
-                eff_type = ["-"]
-                eff_isof = ["-"]
-                eff_aa = ["-"]
-            else:
-                for eff in variant["effs"]:
-                    eff_type.append(eff["eff_type"])
-                    eff_isof.append(eff["eff_isof"])
-                    eff_aa.append(eff["eff_aa"])
-            
-            output_list = [variant_id, variant["contig"], variant["pos"], variant["ref"], variant["alt"], \
-                           ",".join(eff_type), ",".join(eff_isof), ",".join(eff_aa), ",".join(variant["eff_x"])]
-        else:
-            output_list = [variant_id, variant["contig"], variant["pos"], variant["ref"], variant["alt"]]
-        
-        outputs_list.append(output_list)
-    
-    # Sort the list of variants to output
-    # by isoform, contig and position
-    outputs_list = sorted(outputs_list, key=lambda x: (x[1], int(x[2])))  
-    
-    ### Print output
-    genotypes_index_list = sorted(genotypes_dict, key=lambda x: genotypes_dict[x]["good_name"])
-    
-    # Header
-    if show_effects:
-        sys.stdout.write("#\tcontig\tpos\tref\talt\teffect\tisof\tchange\tother")
-    else:
-        sys.stdout.write("#\tcontig\tpos\tref\talt")
-    
-    if output_fmt == "tabular":
-        for sample in samples_list:
-            sys.stdout.write("\t"+sample+"\t")
-        
-    sys.stdout.write("\n")
-    
-    # Data
-    for output_line in outputs_list:
-        var_id = output_line[0]
-        isof_id = output_line[1]
-        fields = [str(field) for field in output_line[1:]]
-        sys.stdout.write(">\t"+"\t".join(fields))
-        
-        if output_fmt == "summary":
-            sys.stdout.write("\n")
-            
-        elif output_fmt == "detail":
-            sys.stdout.write("\n")
-            variant_alleles = variants_dict[var_id]['alleles']
-            
-            for allele in variant_alleles:
-                sys.stdout.write(">>\t")
-                sys.stdout.write(allele+"\t")
-                genotypes_allele = variant_alleles[allele]
-                genotypes_allele = [genotypes_dict[int(genotype)]["good_name"] for genotype in genotypes_allele]
-                
-                genotypes_allele = sorted(genotypes_allele)
-                sys.stdout.write("\t".join(genotypes_allele))
-                sys.stdout.write("\n")
-                
-        elif output_fmt == "tabular":
-            for sample in samples_list:
-                for genotype in genotypes_dict:
-                    if genotypes_dict[genotype]["good_name"] == sample:
-                        sys.stdout.write("\t"+genotypes_dict[genotype][var_id]+"\t")
-                        
-            sys.stdout.write("\n")
-        
-        else:
-            raise Exception("Unrecognized output format "+output_fmt+".")
-    
-    return
+if options.numeric: numeric = True
+else: numeric = False
 
-##
+if options.cluster_samples: cluster_samples = True
+else: cluster_samples = False
 
-def parse_effects_contig(effs_list, variant_dict):
-    for eff in effs_list:
-        eff_data = eff.split("(")
-        eff_fields = eff_data[1].split("|")
-        
-        eff_type = eff_data[0]
-        eff_gene = eff_fields[SNPEFF_GENE_POS]
-        eff_isof = eff_fields[SNPEFF_ISOF_POS]
-        eff_aa = eff_fields[SNPEFF_AA_POS]
-        
-        eff_dict = {'eff_gene':eff_gene, 'eff_type':eff_type, 'eff_isof':eff_isof, 'eff_aa':eff_aa}
-        variant_dict["effs"].append(eff_dict)
-    
-    return
+if cluster_samples and output_format != "tabular":
+    sys.stderr.write("WARNING: samples won't be clustered. It is only compatible with output format \"tabular\".")
 
 ###############
 ###############
 
 _print_parameters(options)
 
+genotypes_dict = {}
+variants_dict = {}
+
+# ASSERT query_list != "" or variants_file != ""
 #### Parse queries file
 ####
-query_list = parse_queries_file(query_file)
+if query_file != "":
+    query_list = parse_queries_file(query_file)
+
+#### Variants to show
+####
+if variants_file != "":
+    variants_list = parse_queries_file(variants_file, keys=(1,2))
 
 #### Parse samples translation
 ####
@@ -214,15 +142,12 @@ samples_list = parse_samples_list(samples_filename)
 
 #### Parse headers file
 ####
-genotypes_dict = {}
 header_found = parse_vcf_header_file(vcf_header, genotypes_dict, \
                                      samples_filename, samples_list, samples_translation, samples_trans_dict)
 
 #### Parse VCF file
 ####
-variants_dict = {}
 total_variants = 0
-snpeff_field_found = False
 try:
     sys.stderr.write("Parsing VCF file...\n")
     vcf_file = open(vcf_filename, 'r')
@@ -245,30 +170,27 @@ try:
         
         contig = line_data[VCF_CONTIG_COL]
         
-        if not contig in query_list: continue
+        if query_file != "" and not contig in query_list: continue
+        
+        pos = line_data[VCF_POS_COL]
+        
+        if variants_file != "" and not [contig, pos] in variants_list: continue
         
         total_variants+=1
         var_id = total_variants
         
-        variant_dict = {'var_id':var_id, 'contig':contig, 'pos':line_data[VCF_POS_COL], \
+        variant_dict = {'var_id':var_id, 'contig':contig, 'pos':pos, \
                         'ref':line_data[VCF_REF_COL], 'alt':line_data[VCF_ALT_COL], \
-                        'alleles':{}, 'effs':[], 'eff_x':[]}
+                        'alleles':{}, 'effs':{}, 'eff_x':[]}
         
-        info = line_data[VCF_INFO_COL]
+        if show_effects: load_effects(line_data, variant_dict)
         
-        if show_effects and SNPEFF_FIELD in info:
-            effs_list = info.split(SNPEFF_FIELD)[1].split(";")[0].split(SNPEFF_EFF_SEP)
-            parse_effects_contig(effs_list, variant_dict)
-            
-            for snpeff_data in info.split(SNPEFF_FIELD)[1].split(";")[1:]:
-                variant_dict["eff_x"].append(snpeff_data[:3])
-            if len(variant_dict["eff_x"]) == 0: variant_dict["eff_x"] = ["-"]
-        
-        alleles = parse_alleles(line_data, genotypes_dict)
+        alleles = parse_alleles(line_data, genotypes_dict, biallelic)
         
         variant_dict['alleles'] = alleles
         
-        if preprocess_variant(alleles, max_heteros, max_missing, show_monomorph, maf):
+        ok_variant = preprocess_variant(alleles, max_heteros, max_missing, show_monomorph, maf, biallelic)
+        if ok_variant:
             variants_dict[var_id] = variant_dict
             for allele in alleles:
                 for j in alleles[allele]:
@@ -276,7 +198,8 @@ try:
     
     #### Output
     ####
-    print_variants_contigs(variants_dict, genotypes_dict, samples_list, show_effects, output_format)
+    print_variants_contigs(variants_dict, genotypes_dict, samples_list, show_effects, output_format, \
+                           biallelic, numeric, cluster_samples)
     
     sys.stderr.write("Total variants read: "+str(total_variants)+"\n")
     sys.stderr.write("Finished.\n")

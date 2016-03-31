@@ -3,6 +3,66 @@
 
 ## CPCantalapiedra - EEAD - CSIC - 2016
 
+import sys, traceback, tempfile, csv
+from subprocess import Popen, PIPE
+
+def cluster_table(temp_file):
+    __command = " ".join(["./cluster_samples.R ", temp_file])
+    
+    sys.stderr.write("cluster_samples.R: "+temp_file+"\n")
+    
+    p = Popen(__command, shell=True, stdout=PIPE, stderr=PIPE)
+    com_list = p.communicate()
+    output = com_list[0]
+    output_err = com_list[1]
+    retValue = p.returncode
+    
+    if retValue != 0: raise Exception("cluster_samples.R: return != 0. "+__command+"\n"+str(output_err)+"\n")
+    
+    sys.stderr.write("cluster_samples.R: return value "+str(retValue)+"\n")
+    
+    return output
+
+def f_cluster_samples(samples_rows, biallelic):
+    new_samples_list = []
+    
+    if biallelic == "bi":
+        raise Exception("Clustering biallelic alleles not yet allowed. Use monoallelic option instead.")
+    else: # biallelic == "mono":
+        try:
+            ##
+            ## Create temp file
+            file_tmp = tempfile.NamedTemporaryFile()
+            file_name = file_tmp.name
+            
+            sys.stderr.write("\t"+file_name+"\n")
+            
+            writer = csv.writer(file_tmp, dialect='excel', delimiter="\t")
+            
+            for sample_row in samples_rows:
+                writer.writerow(sample_row)
+            
+            file_tmp.flush()
+            
+            ##
+            ## Cluster from temp file
+            output = cluster_table(file_name)
+            
+            ##
+            ## Recover order of samples
+            for line in output.strip().split("\n"):
+                new_samples_list.append(line.strip())
+            
+        except Exception:
+            traceback.print_exc()
+            raise
+        finally:
+            file_tmp.close()
+    
+    return new_samples_list
+
+##
+
 def parse_queries_file(query_file, keys=(0,)):
     query_list = []
     if query_file == "":
