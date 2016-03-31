@@ -66,7 +66,7 @@ def f_cluster_samples(samples_rows, biallelic):
 def parse_queries_file(query_file, keys=(0,)):
     query_list = []
     if query_file == "":
-        raise Exception("No queries especified.")
+        pass
     else:
         try:
             queries_file = open(query_file, 'r')

@@ -3,7 +3,7 @@
 
 ## CPCantalapiedra - EEAD - CSIC - 2016
 
-import sys#, traceback
+import sys, traceback
 from optparse import OptionParser
 
 from src.output import *
@@ -30,6 +30,8 @@ optParser.add_option('-c', '--contigs_list', action='store', dest='contigs_list'
 
 optParser.add_option('-v', '--variants_list', action='store', dest='variants_list', type='string', \
                      help='')
+
+optParser.add_option('--contigs_info', action='store', dest='contigs_info', type='string')
 
 optParser.add_option('-t', '--samples_translation', action='store', dest='samples_translation', type='string', \
                      help='')
@@ -76,6 +78,9 @@ else: variants_file = ""
 
 if query_file == "" and variants_file == "":
     raise Exception("Either a list of contigs or of variants is required.")
+
+if options.contigs_info: contigs_info = options.contigs_info
+else: contigs_info = ""
 
 if options.samples_translation: samples_translation = options.samples_translation
 else: samples_translation = ""
@@ -126,19 +131,23 @@ try:
     #### Parse queries file
     ####
     if query_file != "":
+        sys.stderr.write("Processing queries list...\n")
         query_list = parse_queries_file(query_file)
     
     #### Variants to show
     ####
     if variants_file != "":
+        sys.stderr.write("Processing variants list...\n")
         variants_list = parse_queries_file(variants_file, keys=(1,2))
     
     #### Parse samples translation
     ####
+    sys.stderr.write("Processing samples translation list...\n")
     samples_trans_dict = parse_samples_translation(samples_translation)
     
     #### Parse samples list
     ####
+    sys.stderr.write("Parsing samples list...\n")
     samples_list = parse_samples_list(samples_filename)
     
     #### Parse headers file
@@ -198,7 +207,8 @@ try:
     
     #### Output
     ####
-    print_variants_contigs(variants_dict, genotypes_dict, samples_list, show_effects, output_format, \
+    print_variants_contigs(variants_dict, genotypes_dict, samples_list, contigs_info, \
+                           show_effects, output_format, \
                            biallelic, numeric, cluster_samples)
     
     sys.stderr.write("Total variants read: "+str(total_variants)+"\n")
@@ -206,7 +216,7 @@ try:
 
 except Exception as e:
     print e
-    #traceback.print_exc()
+    traceback.print_exc()
 finally:
     vcf_file.close()
 

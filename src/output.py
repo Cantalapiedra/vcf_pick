@@ -7,9 +7,6 @@ import sys
 from util.vcf_util import *
 from util.util import *
 
-GENES = 0
-ISOFS = 1
-
 def f_get_samples_rows(outputs_list, samples_list, genotypes_dict, biallelic):
     samples_rows = []
     
@@ -76,51 +73,88 @@ def print_rows(outputs_list, samples_list, variants_dict, genotypes_dict, output
 
 #
 
-def print_variants_contigs(variants_dict, genotypes_dict, samples_list, show_effects, output_fmt = "tabular", \
+def load_contigs_info(contigs_info):
+    contigs_info_dict = {}
+    
+    if contigs_info != "":
+        for i, line in enumerate(open(contigs_info, 'r')):
+            line_data = line.strip().split("\t")
+            if i == 0:
+                contigs_info_dict["header"] = line_data[1:]
+                contigs_info_dict["void"] = len(line_data[1:])*["-"]
+                contigs_info_dict["fields"] = len(line_data[1:])
+            else:
+                if line_data[0] not in contigs_info_dict:
+                    contigs_info_dict[line_data[0]] = line_data[1:]
+                else:
+                    sys.stderr.write("WARNING: duplicated info for "+str(line_data[0])+"\n")
+    
+    return contigs_info_dict
+
+##
+
+def get_contigs_header(show_effects, contigs_info_dict):
+    header_list = ["#", "contig", "pos"]
+    if len(contigs_info_dict)>0:
+        header_list = header_list + contigs_info_dict["header"]
+    header_list = header_list + ["ref", "alt"]
+    
+    if show_effects:
+        header_list = header_list + ["effect", "isof", "change", "other"]
+    
+    return header_list
+
+def get_contigs_variant(show_effects, variant, contigs_info_dict):
+    contig = variant["contig"]
+    output_list = [variant["var_id"], contig, variant["pos"]]
+    if len(contigs_info_dict)>0:
+        if contig in contigs_info_dict:
+            output_list = output_list + contigs_info_dict[contig]
+        else:
+            output_list = output_list + contigs_info_dict["void"]
+        
+    output_list = output_list + [variant["ref"], variant["alt"]]
+    
+    eff_type = []
+    eff_isof = []
+    eff_aa = []
+    
+    if show_effects:
+        if len(variant["effs"]) == 0:
+            eff_type = ["-"]
+            eff_isof = ["-"]
+            eff_aa = ["-"]
+        else:
+            for eff in sorted(variant["effs"]):
+                variant_eff = variant["effs"][eff]
+                eff_type.append(eff)
+                eff_isof.append("("+",".join(variant_eff["eff_isof"])+")")
+                eff_aa.append("("+",".join(variant_eff["eff_aa"])+")")
+        
+        output_list = output_list + [",".join(eff_type), ",".join(eff_isof), ",".join(eff_aa), ",".join(variant["eff_x"])]
+    
+    return output_list
+
+def print_variants_contigs(variants_dict, genotypes_dict, samples_list, contigs_info = "", \
+                           show_effects = False, output_fmt = "tabular", \
                            biallelic = "mono", numeric = False, cluster_samples = False):
+    
+    contigs_info_dict = load_contigs_info(contigs_info)
     
     # Prepare output lines
     outputs_list = []
     for variant_id in variants_dict:
         variant = variants_dict[variant_id]
-        
-        output_list = []
-        
-        eff_type = []
-        eff_isof = []
-        eff_aa = []
-        
-        if show_effects:
-            if len(variant["effs"]) == 0:
-                eff_type = ["-"]
-                eff_isof = ["-"]
-                eff_aa = ["-"]
-            else:
-                for eff in sorted(variant["effs"]):
-                    variant_eff = variant["effs"][eff]
-                    eff_type.append(eff)
-                    eff_isof.append("("+",".join(variant_eff["eff_isof"])+")")
-                    eff_aa.append("("+",".join(variant_eff["eff_aa"])+")")
-            
-            output_list = [variant_id, variant["contig"], variant["pos"], variant["ref"], variant["alt"], \
-                           ",".join(eff_type), ",".join(eff_isof), ",".join(eff_aa), ",".join(variant["eff_x"])]
-        else:
-            output_list = [variant_id, variant["contig"], variant["pos"], variant["ref"], variant["alt"]]
-        
+        output_list = get_contigs_variant(show_effects, variant, contigs_info_dict)
         outputs_list.append(output_list)
     
     # Sort the list of variants to output
     # by isoform, contig and position
     outputs_list = sorted(outputs_list, key=lambda x: (x[1], int(x[2])))  
     
-    ### Print output
-    genotypes_index_list = sorted(genotypes_dict, key=lambda x: genotypes_dict[x]["good_name"])
-    
     # Header
-    if show_effects:
-        sys.stdout.write("#\tcontig\tpos\tref\talt\teffect\tisof\tchange\tother")
-    else:
-        sys.stdout.write("#\tcontig\tpos\tref\talt")
+    header_list = get_contigs_header(show_effects, contigs_info_dict)
+    sys.stdout.write("\t".join(header_list))
     
     if output_fmt == "tabular":
         if cluster_samples:
@@ -139,41 +173,76 @@ def print_variants_contigs(variants_dict, genotypes_dict, samples_list, show_eff
 
 ##
 
-def print_variants_genes(variants_dict, genotypes_dict, samples_list, query_type, output_fmt = "tabular", \
+def get_genes_header(contigs_info_dict, genes_info_dict):
+    header_list = ["#", "isof"]
+    if len(genes_info_dict)>0:
+        header_list = header_list + genes_info_dict["header"]
+    
+    header_list = header_list + ["effect", "eff_other", "ref", "alt", "change", "contig", "pos"]
+    
+    if len(contigs_info_dict)>0:
+        header_list = header_list + contigs_info_dict["header"]
+    
+    return header_list
+
+def get_genes_effect(variant, variant_eff_isof, variant_eff_aa, eff, contigs_info_dict, genes_info_dict):
+    output_list = []
+    
+    contig = variant["contig"]
+    
+    output_list = [variant["var_id"], variant_eff_isof]
+    
+    if len(genes_info_dict)>0:
+        if variant_eff_isof in genes_info_dict:
+            output_list = output_list + genes_info_dict[variant_eff_isof]
+        else:
+            output_list = output_list + genes_info_dict["void"]
+    
+    output_list = output_list + [eff, ",".join(variant["eff_x"]), \
+                    variant["ref"], variant["alt"], variant_eff_aa, \
+                    contig, variant["pos"]]
+    
+    if len(contigs_info_dict)>0:
+        if contig in contigs_info_dict:
+            output_list = output_list + contigs_info_dict[contig]
+        else:
+            output_list = output_list + contigs_info_dict["void"]
+    
+    return output_list
+
+def print_variants_genes(variants_dict, genotypes_dict, samples_list, contigs_info, genes_info, \
+                         output_fmt = "tabular", \
                          biallelic = "mono", numeric = False, cluster_samples = False):
+    
+    contigs_info_dict = load_contigs_info(contigs_info)
+    genes_info_dict = load_contigs_info(genes_info) # Using the same function as for contigs
     
     # Prepare output lines
     outputs_list = []
     for variant_id in variants_dict:
         variant = variants_dict[variant_id]
         
-        output_list = []
         for eff in variant["effs"]:
             variant_effs = variant["effs"][eff]
             for i, variant_eff_isof in enumerate(variant_effs["eff_isof"]):
                 variant_eff_aa = variant_effs["eff_aa"][i]
-                if query_type == GENES:
-                    output_list = [variant_id, variant_eff_isof, eff, ",".join(variant["eff_x"]), \
-                                    variant["ref"], variant["alt"], variant_eff_aa, \
-                                    variant["contig"], variant["pos"]]
-                elif query_type == ISOFS:
-                    output_list = [variant_id, variant_eff_isof, eff, ",".join(variant["eff_x"]), \
-                                    variant["ref"], variant["alt"], variant_eff_aa, \
-                                    variant["contig"], variant["pos"]]
-                else:
-                    sys.stderr.write("Unrecognized query type "+query_type+"\n")
-                
+                output_list = get_genes_effect(variant, variant_eff_isof, variant_eff_aa, eff, \
+                                               contigs_info_dict, genes_info_dict)
                 outputs_list.append(output_list)    
         
     # Sort the list of variants to output
     # by isoform, contig and position
-    outputs_list = sorted(outputs_list, key=lambda x: (x[1], x[7], int(x[8])))  
-    
-    ### Print output
-    genotypes_index_list = sorted(genotypes_dict, key=lambda x: genotypes_dict[x]["good_name"])
+    if genes_info == "":
+        outputs_list = sorted(outputs_list, key=lambda x: (x[1], x[7], int(x[8])))
+    else:
+        add_fields = genes_info_dict["fields"]
+        outputs_list = sorted(outputs_list, key=lambda x: (x[1], x[7+add_fields], int(x[8+add_fields])))
     
     # Header
-    sys.stdout.write("#\tisof\teffect\teff_other\tref\talt\tchange\tcontig\tpos")
+    # Header
+    header_list = get_genes_header(contigs_info_dict, genes_info_dict)
+    sys.stdout.write("\t".join(header_list))
+    
     if output_fmt == "tabular":
         if cluster_samples:
             samples_rows = f_get_samples_rows(outputs_list, samples_list, genotypes_dict, biallelic)
@@ -181,12 +250,19 @@ def print_variants_genes(variants_dict, genotypes_dict, samples_list, query_type
         # else: samples_list = samples_list
         for sample in samples_list:
             sys.stdout.write("\t"+sample)
-            
+    
     sys.stdout.write("\n")
     
     # Rows
     print_rows(outputs_list, samples_list, variants_dict, genotypes_dict, output_fmt, biallelic, numeric)
     
     return
+
+##
+
+def print_filtered_samples(line_data, samples_fields):
+    sys.stdout.write("\t".join(line_data[:VCF_SAMPLES_INI_COL]+\
+                                [line_data[i] for i in samples_fields])+"\n")
+
 
 ## END

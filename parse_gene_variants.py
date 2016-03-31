@@ -8,6 +8,9 @@ from optparse import OptionParser
 
 from src.output import *
 
+GENES = 0
+ISOF = 1
+
 def _print_parameters(options):
     options_dict = options.__dict__
     sys.stderr.write("Options:\n")
@@ -33,6 +36,10 @@ optParser.add_option('-i', '--isof_list', action='store', dest='isof_list', type
 
 optParser.add_option('-v', '--variants_list', action='store', dest='variants_list', type='string', \
                      help='')
+
+optParser.add_option('--contigs_info', action='store', dest='contigs_info', type='string')
+
+optParser.add_option('--genes_info', action='store', dest='genes_info', type='string')
 
 optParser.add_option('-t', '--samples_translation', action='store', dest='samples_translation', type='string', \
                      help='')
@@ -82,6 +89,12 @@ if query_file == "": raise Exception("Either a list of genes or isoforms is need
 if options.variants_list:
     variants_file = options.variants_list
 else: variants_file = ""
+
+if options.contigs_info: contigs_info = options.contigs_info
+else: contigs_info = ""
+
+if options.genes_info: genes_info = options.genes_info
+else: genes_info = ""
 
 if options.samples_translation: samples_translation = options.samples_translation
 else: samples_translation = ""
@@ -200,7 +213,8 @@ try:
     
     #### Output
     ####
-    print_variants_genes(variants_dict, genotypes_dict, samples_list, query_type, output_format, \
+    print_variants_genes(variants_dict, genotypes_dict, samples_list, contigs_info, genes_info, \
+                         output_format, \
                          biallelic, numeric, cluster_samples)
     
     sys.stderr.write("Total variants read: "+str(total_variants)+"\n")

@@ -26,6 +26,29 @@ HETERO = "h"
 MISS = "."
 REF = "0"
 
+def get_variant_genes_isof(line_data, query_type):
+    GENES = 0
+    ISOFS = 1
+    genes_isof_list = []
+    
+    info = line_data[VCF_INFO_COL]
+    
+    if SNPEFF_FIELD in info:
+        effs_list = info.split(SNPEFF_FIELD)[1].split(";")[0].split(SNPEFF_EFF_SEP)
+        for eff in effs_list:
+            eff_data = eff.split("(")
+            eff_fields = eff_data[1].split("|")
+            
+            if query_type == GENES: genes_isof_list.append(eff_fields[SNPEFF_GENE_POS])
+            if query_type == ISOFS: genes_isof_list.append(eff_fields[SNPEFF_ISOF_POS])
+        
+    else:
+        raise Exception("Could not find snpEff fields, which is required to filter by genes or isoforms.")
+    
+    return genes_isof_list
+
+##
+
 def get_numeric_allele(allele, biallelic):
     if biallelic == "bi":
         raise Exception("Biallelic alleles not yet allowed to yield numeric alleles.")
@@ -129,6 +152,21 @@ def parse_effects_genes(effs_list, query_type, query_list, variant_dict):
             effects_dict[eff_type] = eff_dict
     
     return retValue
+
+##
+
+def filter_header(line_data, samples_list = [], samples_translation = "", samples_trans_dict = {}):
+    samples_fields = []
+    
+    for j, genotype in enumerate(line_data[VCF_SAMPLES_INI_COL:]):
+        if samples_translation == "":
+            if genotype in samples_list:
+                samples_fields.append(j+VCF_SAMPLES_INI_COL)
+        else:
+            if samples_trans_dict[genotype] in samples_list:
+                samples_fields.append(j+VCF_SAMPLES_INI_COL)
+    
+    return samples_fields
 
 ##
 
