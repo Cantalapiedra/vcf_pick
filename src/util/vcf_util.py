@@ -41,6 +41,27 @@ def get_numeric_allele(allele, biallelic):
 
 ##
 
+def load_effects_genes(line_data, variant_dict, query_type, query_list):
+    ok_variant = False
+    
+    info = line_data[VCF_INFO_COL]
+    
+    if SNPEFF_FIELD in info:
+        effs_list = info.split(SNPEFF_FIELD)[1].split(";")[0].split(SNPEFF_EFF_SEP)
+        
+        if parse_effects_genes(effs_list, query_type, query_list, variant_dict):
+            ok_variant = True
+            
+            # The split(";")[0] is to avoid fields beyond EFF= (like LOF=)
+            for snpeff_data in info.split(SNPEFF_FIELD)[1].split(";")[1:]:
+                variant_dict["eff_x"].append(snpeff_data[:3])
+            if len(variant_dict["eff_x"]) == 0: variant_dict["eff_x"] = ["-"]   
+    else:
+        sys.stderr.write("WARNING: VCF record withouth snpEff field ("+SNPEFF_FIELD+") found: "+line)
+    
+    return ok_variant
+
+
 def load_effects(line_data, variant_dict):
     info = line_data[VCF_INFO_COL]
     
@@ -51,6 +72,7 @@ def load_effects(line_data, variant_dict):
         for snpeff_data in info.split(SNPEFF_FIELD)[1].split(";")[1:]:
             variant_dict["eff_x"].append(snpeff_data[:3])
         if len(variant_dict["eff_x"]) == 0: variant_dict["eff_x"] = ["-"]
+    
     return
 
 def parse_effects_contig(effs_list, variant_dict):
@@ -76,7 +98,7 @@ def parse_effects_contig(effs_list, variant_dict):
     
     return
 
-def parse_effects_genes(effs_list, query_type, query_list, total_variants, variant_dict):
+def parse_effects_genes(effs_list, query_type, query_list, variant_dict):
     GENES = 0
     ISOFS = 1
     

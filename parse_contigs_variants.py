@@ -3,7 +3,7 @@
 
 ## CPCantalapiedra - EEAD - CSIC - 2016
 
-import sys, traceback
+import sys#, traceback
 from optparse import OptionParser
 
 from src.output import *
@@ -118,37 +118,37 @@ if cluster_samples and output_format != "tabular":
 
 _print_parameters(options)
 
-genotypes_dict = {}
-variants_dict = {}
-
-# ASSERT query_list != "" or variants_file != ""
-#### Parse queries file
-####
-if query_file != "":
-    query_list = parse_queries_file(query_file)
-
-#### Variants to show
-####
-if variants_file != "":
-    variants_list = parse_queries_file(variants_file, keys=(1,2))
-
-#### Parse samples translation
-####
-samples_trans_dict = parse_samples_translation(samples_translation)
-
-#### Parse samples list
-####
-samples_list = parse_samples_list(samples_filename)
-
-#### Parse headers file
-####
-header_found = parse_vcf_header_file(vcf_header, genotypes_dict, \
-                                     samples_filename, samples_list, samples_translation, samples_trans_dict)
-
-#### Parse VCF file
-####
-total_variants = 0
 try:
+    genotypes_dict = {}
+    variants_dict = {}
+    
+    # ASSERT query_list != "" or variants_file != ""
+    #### Parse queries file
+    ####
+    if query_file != "":
+        query_list = parse_queries_file(query_file)
+    
+    #### Variants to show
+    ####
+    if variants_file != "":
+        variants_list = parse_queries_file(variants_file, keys=(1,2))
+    
+    #### Parse samples translation
+    ####
+    samples_trans_dict = parse_samples_translation(samples_translation)
+    
+    #### Parse samples list
+    ####
+    samples_list = parse_samples_list(samples_filename)
+    
+    #### Parse headers file
+    ####
+    header_found = parse_vcf_header_file(vcf_header, genotypes_dict, \
+                                         samples_filename, samples_list, samples_translation, samples_trans_dict)
+    
+    #### Parse VCF file
+    ####
+    total_variants = 0
     sys.stderr.write("Parsing VCF file...\n")
     vcf_file = open(vcf_filename, 'r')
     for line in vcf_file:
@@ -205,8 +205,8 @@ try:
     sys.stderr.write("Finished.\n")
 
 except Exception as e:
-    sys.stderr.write("An error ocurred while parsing VCF file.\n")
-    traceback.print_exc()
+    print e
+    #traceback.print_exc()
 finally:
     vcf_file.close()
 

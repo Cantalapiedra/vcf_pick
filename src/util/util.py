@@ -3,11 +3,12 @@
 
 ## CPCantalapiedra - EEAD - CSIC - 2016
 
-import sys, traceback, tempfile, csv
+import os, sys, tempfile, csv
 from subprocess import Popen, PIPE
 
 def cluster_table(temp_file):
-    __command = " ".join(["./cluster_samples.R ", temp_file])
+    curr_path = os.path.dirname(os.path.abspath(__file__))
+    __command = " ".join([curr_path+"/cluster_samples.R ", temp_file])
     
     sys.stderr.write("cluster_samples.R: "+temp_file+"\n")
     
@@ -54,7 +55,6 @@ def f_cluster_samples(samples_rows, biallelic):
                 new_samples_list.append(line.strip())
             
         except Exception:
-            traceback.print_exc()
             raise
         finally:
             file_tmp.close()
