@@ -10,7 +10,7 @@ def cluster_table(temp_file):
     curr_path = os.path.dirname(os.path.abspath(__file__))
     __command = " ".join([curr_path+"/cluster_samples.R ", temp_file])
     
-    sys.stderr.write("cluster_samples.R: "+temp_file+"\n")
+    sys.stderr.write("\tcluster_samples.R: "+temp_file+"\n")
     
     p = Popen(__command, shell=True, stdout=PIPE, stderr=PIPE)
     com_list = p.communicate()
@@ -20,13 +20,14 @@ def cluster_table(temp_file):
     
     if retValue != 0: raise Exception("cluster_samples.R: return != 0. "+__command+"\n"+str(output_err)+"\n")
     
-    sys.stderr.write("cluster_samples.R: return value "+str(retValue)+"\n")
+    #sys.stderr.write("cluster_samples.R: return value "+str(retValue)+"\n")
     
     return output
 
 def f_cluster_samples(samples_rows, biallelic):
     new_samples_list = []
     
+    sys.stderr.write("Clustering samples...\n")
     if biallelic == "bi":
         raise Exception("Clustering biallelic alleles not yet allowed. Use monoallelic option instead.")
     else: # biallelic == "mono":
@@ -36,7 +37,7 @@ def f_cluster_samples(samples_rows, biallelic):
             file_tmp = tempfile.NamedTemporaryFile()
             file_name = file_tmp.name
             
-            sys.stderr.write("\t"+file_name+"\n")
+            sys.stderr.write("\ttemp file created: "+file_name+"\n")
             
             writer = csv.writer(file_tmp, dialect='excel', delimiter="\t")
             
@@ -58,6 +59,8 @@ def f_cluster_samples(samples_rows, biallelic):
             raise
         finally:
             file_tmp.close()
+    
+    sys.stderr.write("Samples clustered.\n")
     
     return new_samples_list
 

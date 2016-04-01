@@ -76,8 +76,8 @@ if options.variants_list:
     variants_file = options.variants_list
 else: variants_file = ""
 
-if query_file == "" and variants_file == "":
-    raise Exception("Either a list of contigs or of variants is required.")
+#if query_file == "" and variants_file == "":
+#    raise Exception("Either a list of contigs or of variants is required.")
 
 if options.contigs_info: contigs_info = options.contigs_info
 else: contigs_info = ""
@@ -125,9 +125,9 @@ _print_parameters(options)
 
 try:
     genotypes_dict = {}
+    names_dict = {}
     variants_dict = {}
     
-    # ASSERT query_list != "" or variants_file != ""
     #### Parse queries file
     ####
     if query_file != "":
@@ -152,12 +152,14 @@ try:
     
     #### Parse headers file
     ####
-    header_found = parse_vcf_header_file(vcf_header, genotypes_dict, \
+    header_found = parse_vcf_header_file(vcf_header, genotypes_dict, names_dict, \
                                          samples_filename, samples_list, samples_translation, samples_trans_dict)
     
     #### Parse VCF file
     ####
+    total_records = 0
     total_variants = 0
+    total_output = 0
     sys.stderr.write("Parsing VCF file...\n")
     vcf_file = open(vcf_filename, 'r')
     for line in vcf_file:
@@ -169,7 +171,7 @@ try:
         # If a header is found, and if no header file was specified
         # record names of genotypes
         if line.startswith("#") and vcf_header == "":
-            parse_header(line_data, genotypes_dict, \
+            parse_header(line_data, genotypes_dict, names_dict, \
                          samples_filename, samples_list, samples_translation, samples_trans_dict)
             header_found = True
             continue
@@ -177,12 +179,12 @@ try:
         if not header_found:
             raise Exception("No header found nor provided for VCF data.")
         
-        contig = line_data[VCF_CONTIG_COL]
+        total_records += 1
         
+        contig = line_data[VCF_CONTIG_COL]
         if query_file != "" and not contig in query_list: continue
         
         pos = line_data[VCF_POS_COL]
-        
         if variants_file != "" and not [contig, pos] in variants_list: continue
         
         total_variants+=1
@@ -201,17 +203,21 @@ try:
         ok_variant = preprocess_variant(alleles, max_heteros, max_missing, show_monomorph, maf, biallelic)
         if ok_variant:
             variants_dict[var_id] = variant_dict
+            total_output += 1
             for allele in alleles:
                 for j in alleles[allele]:
                     genotypes_dict[j][var_id] = allele
     
     #### Output
     ####
-    print_variants_contigs(variants_dict, genotypes_dict, samples_list, contigs_info, \
+    sys.stderr.write("Generating output...\n")
+    print_variants_contigs(variants_dict, genotypes_dict, names_dict, samples_list, contigs_info, \
                            show_effects, output_format, \
                            biallelic, numeric, cluster_samples)
     
-    sys.stderr.write("Total variants read: "+str(total_variants)+"\n")
+    sys.stderr.write("Total records read: "+str(total_records)+"\n")
+    sys.stderr.write("Total variants parsed: "+str(total_variants)+"\n")
+    sys.stderr.write("Total variants output: "+str(total_output)+"\n")
     sys.stderr.write("Finished.\n")
 
 except Exception as e:

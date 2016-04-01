@@ -7,12 +7,14 @@ import sys
 from util.vcf_util import *
 from util.util import *
 
-def f_get_samples_rows(outputs_list, samples_list, genotypes_dict, biallelic):
+def f_get_samples_rows(outputs_list, samples_list, genotypes_dict, names_dict, biallelic):
     samples_rows = []
     
+    sys.stderr.write("Preparing data of samples for clustering...\n")
     header_row = []
-    for sample in samples_list:
-        header_row.append(sample)
+    header_row = samples_list
+    #for sample in samples_list:
+    #    header_row.append(sample)
     
     samples_rows.append(header_row)
     
@@ -20,18 +22,23 @@ def f_get_samples_rows(outputs_list, samples_list, genotypes_dict, biallelic):
         var_id = output_line[0]
         var_row = []
         for sample in samples_list:
-            for genotype in genotypes_dict:
-                if genotypes_dict[genotype]["good_name"] == sample:
-                    genotype_var_allele = get_numeric_allele(genotypes_dict[genotype][var_id], biallelic)
-                    var_row.append(genotype_var_allele)
+            genotype = names_dict[sample]
+            #for genotype in genotypes_dict:
+            #    if genotypes_dict[genotype]["good_name"] == sample:
+            genotype_var_allele = get_numeric_allele(genotypes_dict[genotype][var_id], biallelic)
+            var_row.append(genotype_var_allele)
         samples_rows.append(var_row)
+    
+    sys.stderr.write("Ready for clustering.\n")
     
     return samples_rows
 
 #
 
-def print_rows(outputs_list, samples_list, variants_dict, genotypes_dict, output_fmt, biallelic, numeric):
+def print_rows(outputs_list, samples_list, variants_dict, genotypes_dict, names_dict, output_fmt, biallelic, numeric):
     # For each variant/gene position to output
+    sys.stderr.write("Printing genotypes...\n")
+    
     for output_line in outputs_list:
         var_id = output_line[0]
         #isof_id = output_line[1]
@@ -57,13 +64,14 @@ def print_rows(outputs_list, samples_list, variants_dict, genotypes_dict, output
                 
         elif output_fmt == "tabular":
             for sample in samples_list:
-                for genotype in genotypes_dict:
-                    if genotypes_dict[genotype]["good_name"] == sample:
-                        if biallelic == "bi" or not numeric:
-                            sys.stdout.write("\t"+genotypes_dict[genotype][var_id])
-                        else: # biallelic = "mono" and numeric:
-                            numeric_allele = get_numeric_allele(genotypes_dict[genotype][var_id], biallelic)
-                            sys.stdout.write("\t"+str(numeric_allele))
+                genotype = names_dict[sample]
+                #for genotype in genotypes_dict:
+                #    if genotypes_dict[genotype]["good_name"] == sample:
+                if biallelic == "bi" or not numeric:
+                    sys.stdout.write("\t"+genotypes_dict[genotype][var_id])
+                else: # biallelic = "mono" and numeric:
+                    numeric_allele = get_numeric_allele(genotypes_dict[genotype][var_id], biallelic)
+                    sys.stdout.write("\t"+str(numeric_allele))
             sys.stdout.write("\n")
         
         else:
@@ -76,6 +84,8 @@ def print_rows(outputs_list, samples_list, variants_dict, genotypes_dict, output
 def load_contigs_info(contigs_info):
     contigs_info_dict = {}
     
+    ## TODO: check all rows have the same number of fields or raise an
+    ## Exception("The info file should have the same number of fields/columns in all the rows.")
     if contigs_info != "":
         for i, line in enumerate(open(contigs_info, 'r')):
             line_data = line.strip().split("\t")
@@ -135,7 +145,7 @@ def get_contigs_variant(show_effects, variant, contigs_info_dict):
     
     return output_list
 
-def print_variants_contigs(variants_dict, genotypes_dict, samples_list, contigs_info = "", \
+def print_variants_contigs(variants_dict, genotypes_dict, names_dict, samples_list, contigs_info = "", \
                            show_effects = False, output_fmt = "tabular", \
                            biallelic = "mono", numeric = False, cluster_samples = False):
     
@@ -158,7 +168,7 @@ def print_variants_contigs(variants_dict, genotypes_dict, samples_list, contigs_
     
     if output_fmt == "tabular":
         if cluster_samples:
-            samples_rows = f_get_samples_rows(outputs_list, samples_list, genotypes_dict, biallelic)
+            samples_rows = f_get_samples_rows(outputs_list, samples_list, genotypes_dict, names_dict, biallelic)
             samples_list = f_cluster_samples(samples_rows, biallelic)
         # else: samples_list = samples_list
         for sample in samples_list:
@@ -167,7 +177,7 @@ def print_variants_contigs(variants_dict, genotypes_dict, samples_list, contigs_
     sys.stdout.write("\n") # END of header row
     
     # Rows
-    print_rows(outputs_list, samples_list, variants_dict, genotypes_dict, output_fmt, biallelic, numeric)
+    print_rows(outputs_list, samples_list, variants_dict, genotypes_dict, names_dict, output_fmt, biallelic, numeric)
     
     return
 
@@ -210,7 +220,7 @@ def get_genes_effect(variant, variant_eff_isof, variant_eff_aa, eff, contigs_inf
     
     return output_list
 
-def print_variants_genes(variants_dict, genotypes_dict, samples_list, contigs_info, genes_info, \
+def print_variants_genes(variants_dict, genotypes_dict, names_dict, samples_list, contigs_info, genes_info, \
                          output_fmt = "tabular", \
                          biallelic = "mono", numeric = False, cluster_samples = False):
     
@@ -236,16 +246,16 @@ def print_variants_genes(variants_dict, genotypes_dict, samples_list, contigs_in
         outputs_list = sorted(outputs_list, key=lambda x: (x[1], x[7], int(x[8])))
     else:
         add_fields = genes_info_dict["fields"]
+        
         outputs_list = sorted(outputs_list, key=lambda x: (x[1], x[7+add_fields], int(x[8+add_fields])))
     
-    # Header
     # Header
     header_list = get_genes_header(contigs_info_dict, genes_info_dict)
     sys.stdout.write("\t".join(header_list))
     
     if output_fmt == "tabular":
         if cluster_samples:
-            samples_rows = f_get_samples_rows(outputs_list, samples_list, genotypes_dict, biallelic)
+            samples_rows = f_get_samples_rows(outputs_list, samples_list, genotypes_dict, names_dict, biallelic)
             samples_list = f_cluster_samples(samples_rows, biallelic)
         # else: samples_list = samples_list
         for sample in samples_list:
@@ -254,7 +264,7 @@ def print_variants_genes(variants_dict, genotypes_dict, samples_list, contigs_in
     sys.stdout.write("\n")
     
     # Rows
-    print_rows(outputs_list, samples_list, variants_dict, genotypes_dict, output_fmt, biallelic, numeric)
+    print_rows(outputs_list, samples_list, variants_dict, genotypes_dict, names_dict, output_fmt, biallelic, numeric)
     
     return
 

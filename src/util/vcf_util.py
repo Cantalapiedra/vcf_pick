@@ -64,27 +64,6 @@ def get_numeric_allele(allele, biallelic):
 
 ##
 
-def load_effects_genes(line_data, variant_dict, query_type, query_list):
-    ok_variant = False
-    
-    info = line_data[VCF_INFO_COL]
-    
-    if SNPEFF_FIELD in info:
-        effs_list = info.split(SNPEFF_FIELD)[1].split(";")[0].split(SNPEFF_EFF_SEP)
-        
-        if parse_effects_genes(effs_list, query_type, query_list, variant_dict):
-            ok_variant = True
-            
-            # The split(";")[0] is to avoid fields beyond EFF= (like LOF=)
-            for snpeff_data in info.split(SNPEFF_FIELD)[1].split(";")[1:]:
-                variant_dict["eff_x"].append(snpeff_data[:3])
-            if len(variant_dict["eff_x"]) == 0: variant_dict["eff_x"] = ["-"]   
-    else:
-        sys.stderr.write("WARNING: VCF record withouth snpEff field ("+SNPEFF_FIELD+") found: "+line)
-    
-    return ok_variant
-
-
 def load_effects(line_data, variant_dict):
     info = line_data[VCF_INFO_COL]
     
@@ -121,6 +100,26 @@ def parse_effects_contig(effs_list, variant_dict):
     
     return
 
+def load_effects_genes(line_data, variant_dict, query_type, query_list):
+    ok_variant = False
+    
+    info = line_data[VCF_INFO_COL]
+    
+    if SNPEFF_FIELD in info:
+        effs_list = info.split(SNPEFF_FIELD)[1].split(";")[0].split(SNPEFF_EFF_SEP)
+        
+        if parse_effects_genes(effs_list, query_type, query_list, variant_dict):
+            ok_variant = True
+            
+            # The split(";")[0] is to avoid fields beyond EFF= (like LOF=)
+            for snpeff_data in info.split(SNPEFF_FIELD)[1].split(";")[1:]:
+                variant_dict["eff_x"].append(snpeff_data[:3])
+            if len(variant_dict["eff_x"]) == 0: variant_dict["eff_x"] = ["-"]   
+    else:
+        sys.stderr.write("WARNING: VCF record withouth snpEff field ("+SNPEFF_FIELD+") found: "+line)
+    
+    return ok_variant
+
 def parse_effects_genes(effs_list, query_type, query_list, variant_dict):
     GENES = 0
     ISOFS = 1
@@ -128,28 +127,40 @@ def parse_effects_genes(effs_list, query_type, query_list, variant_dict):
     retValue = False
     effects_dict = variant_dict["effs"]
     
-    for eff in effs_list:
-        eff_data = eff.split("(")
-        eff_fields = eff_data[1].split("|")
-        
-        eff_type = eff_data[0]
-        eff_gene = eff_fields[SNPEFF_GENE_POS]
-        eff_isof = eff_fields[SNPEFF_ISOF_POS]
-        eff_aa = eff_fields[SNPEFF_AA_POS]
-        
-        if query_type == GENES and (eff_gene not in query_list): continue
-        if query_type == ISOFS and (eff_isof not in query_list): continue
-        
-        if not retValue: retValue = True
-        
-        if eff_type in effects_dict:
-            eff_dict = effects_dict[eff_type]
-            eff_dict["eff_gene"].append(eff_gene)
-            eff_dict["eff_isof"].append(eff_isof)
-            eff_dict["eff_aa"].append(eff_aa)
+    if len(effs_list) == 0:
+        if query_type == GENES or query_type == ISOFS:
+            pass
         else:
-            eff_dict = {'eff_gene':[eff_gene], 'eff_type':eff_type, 'eff_isof':[eff_isof], 'eff_aa':[eff_aa]}
+            eff_dict = {'eff_gene':["-"], 'eff_type':"-", 'eff_isof':["-"], 'eff_aa':["-"]}
             effects_dict[eff_type] = eff_dict
+    else:
+        for eff in effs_list:
+            eff_data = eff.split("(")
+            eff_fields = eff_data[1].split("|")
+            
+            eff_type = eff_data[0]
+            eff_gene = eff_fields[SNPEFF_GENE_POS]
+            eff_isof = eff_fields[SNPEFF_ISOF_POS]
+            eff_aa = eff_fields[SNPEFF_AA_POS]
+            
+            # empty fields. i.e.: intergenic_variant
+            if eff_gene == "": eff_gene = "-"
+            if eff_isof == "": eff_isof = "-"
+            if eff_aa == "": eff_aa = "-"
+            
+            if query_type == GENES and (eff_gene not in query_list): continue
+            if query_type == ISOFS and (eff_isof not in query_list): continue
+            
+            if not retValue: retValue = True
+            
+            if eff_type in effects_dict:
+                eff_dict = effects_dict[eff_type]
+                eff_dict["eff_gene"].append(eff_gene)
+                eff_dict["eff_isof"].append(eff_isof)
+                eff_dict["eff_aa"].append(eff_aa)
+            else:
+                eff_dict = {'eff_gene':[eff_gene], 'eff_type':eff_type, 'eff_isof':[eff_isof], 'eff_aa':[eff_aa]}
+                effects_dict[eff_type] = eff_dict
     
     return retValue
 
@@ -170,31 +181,37 @@ def filter_header(line_data, samples_list = [], samples_translation = "", sample
 
 ##
 
-def parse_header(line_data, genotypes_dict, \
+def parse_header(line_data, genotypes_dict, names_dict, \
                  samples_filename = "", samples_list = [], samples_translation = "", samples_trans_dict = {}):
-    
     for j, genotype in enumerate(line_data[VCF_SAMPLES_INI_COL:]):
         new_genotype = {"name":genotype, "index":j}
+        
         if samples_translation == "":
-            new_genotype["good_name"] = genotype
+            good_name = genotype
         else:
-            new_genotype["good_name"] = samples_trans_dict[genotype]
+            good_name = samples_trans_dict[genotype]
+        
+        new_genotype["good_name"] = good_name
         
         if samples_filename == "":
             if samples_translation == "":
-                samples_list.append(genotype)
-            else:samples_list.append(samples_trans_dict[genotype])
-                
+                samples_list.append(good_name)
+            else:
+                samples_list.append(good_name)
         else:
-            if new_genotype["good_name"] not in set(samples_list): continue
+            if good_name not in set(samples_list): continue
         
         genotypes_dict[j] = new_genotype
+        if good_name not in names_dict:
+            names_dict[good_name] = j
+        else:
+            raise Exception("Duplicated sample name "+str(good_name)+".")
     
     return
 
 ##
 
-def parse_vcf_header_file(vcf_header_file, genotypes_dict, \
+def parse_vcf_header_file(vcf_header_file, genotypes_dict, names_dict, \
                           samples_filename, samples_list, samples_translation, samples_trans_dict):
     header_found = False
     # If a headers file is specified, record names of genotypes
@@ -205,7 +222,7 @@ def parse_vcf_header_file(vcf_header_file, genotypes_dict, \
             headers_file = open(vcf_header_file, 'r')
             for header in headers_file:
                 line_data = header.strip().split()
-                parse_header(line_data, genotypes_dict, \
+                parse_header(line_data, genotypes_dict, names_dict, \
                              samples_filename, samples_list, samples_translation, samples_trans_dict)
                 header_found = True
                 break
@@ -263,7 +280,7 @@ def parse_biallelic(genotype):
 ##
 
  # Heteros --> missing; missing --> rm; monomorph --> rm
-def preprocess_variant(alleles, max_heteros, max_missing, show_monomorph, maf = 0.3, alleles_output = "mono"):
+def preprocess_variant(alleles, max_heteros, max_missing, show_monomorph, maf = 0.0, alleles_output = "mono"):
     retValue = True
     
     genotypes_keys = set(alleles)

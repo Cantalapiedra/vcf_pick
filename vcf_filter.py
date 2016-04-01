@@ -92,29 +92,26 @@ try:
     genotypes_dict = {}
     variants_dict = {}
     
+    sys.stderr.write("Parsing filter files...\n")
+    
     #### Parse queries file
     ####
-    sys.stderr.write("Processing queries list...\n")
     query_list = parse_queries_file(query_file)
     
     #### Variants to show
     ####
-    sys.stderr.write("Processing variants list...\n")
     variants_list = parse_queries_file(variants_file, keys=(1,2))
     
     #### Genes or isofoms
     ####
-    sys.stderr.write("Processing variants list...\n")
     genes_list = parse_queries_file(genes_file)
     
     #### Parse samples list
     ####
-    sys.stderr.write("Parsing samples list...\n")
     samples_list = parse_samples_list(samples_filename)
     
     #### Parse samples translation
     ####
-    sys.stderr.write("Processing samples translation list...\n")
     samples_trans_dict = parse_samples_translation(samples_translation)
     
     #### Parse headers file
@@ -125,6 +122,7 @@ try:
     #### Parse VCF file
     ####
     total_variants = 0
+    total_output = 0
     vcf_file = open(vcf_filename, 'r')
     sys.stderr.write("Parsing VCF file...\n")
     for line in vcf_file:
@@ -148,6 +146,8 @@ try:
         if not header_found:
             raise Exception("No header found in VCF file.") # A header is needed
         
+        total_variants += 1
+        
         contig = line_data[VCF_CONTIG_COL]
         
         if query_file != "" and not contig in query_list: continue
@@ -169,8 +169,11 @@ try:
             print_filtered_samples(line_data, samples_fields)
         else:
             sys.stdout.write(line.strip()+"\n")
+        
+        total_output += 1
     
     sys.stderr.write("Total variants read: "+str(total_variants)+"\n")
+    sys.stderr.write("Total variants retained: "+str(total_output)+"\n")
     sys.stderr.write("Finished.\n")
 
 except Exception as e:
