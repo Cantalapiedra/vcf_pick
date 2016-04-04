@@ -70,7 +70,7 @@ Flags:
 
 File formats
 - input VCF file: currently, only format VCFv4.1 with snpEffv4.0b has been tested.
-- H FILENAME must contain a VCF formatted header, including the initial symbol ("#").
+- -H FILENAME must contain a VCF formatted header, including the initial symbol ("#").
 - -c FILENAME, -g FILENAME, -i FILENAME, -s FILENAME: must have a single column, each row representing an accession.
 - -v FILENAME: must have 2 columns, each row containing contig/chr and position, tab separated.
 - -t FILENAME: must contain 2 tab separated columns, first one corresponding to the sample name in the VCF file, second one corresponding to the sample name to be output.
