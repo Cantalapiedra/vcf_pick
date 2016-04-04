@@ -1,7 +1,11 @@
 vcf_pick
 ========
 
-Tools to parse VCF for specific purposes
+Tools to parse VCF files for specific purposes.
+
+"VCF is a text file format (most likely stored in a compressed manner). It contains meta-information lines, a header
+line, and then data lines each containing information about a position in the genome. The format also has the ability
+to contain genotype information on samples for each position." from The Variant Call Format (VCF) Version 4.1 Specification, 17 Dec 2013. Recovered from http://samtools.github.io/hts-specs/VCFv4.1.pdf 4 Apr 2016
 
 ##### vcf_filter
 
@@ -69,7 +73,7 @@ Flags:
 - -k: cluster samples using genotypes as input for R hclust.
 
 File formats
-- input VCF file: currently, only format VCFv4.1 with snpEffv4.0b has been tested.
+- input VCF file: currently, only format VCFv4.1 with snpEffv4.0b has been tested. http://samtools.github.io/hts-specs/VCFv4.1.pdf
 - -H FILENAME must contain a VCF formatted header, including the initial symbol ("#").
 - -c FILENAME, -g FILENAME, -i FILENAME, -s FILENAME: must have a single column, each row representing an accession.
 - -v FILENAME: must have 2 columns, each row containing contig/chr and position, tab separated.
