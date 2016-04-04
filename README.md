@@ -87,3 +87,4 @@ VCF_FILE: currently, only format VCFv4.1 with snpEffv4.0b has been tested.
   - summary: output only the variants, without alleles or genotypes.
   - detail: below each variant, a row for each allele is shown, along with the genotypes of each allele.
   - tabular: along with each variant, columns are added to include the alleles of each sample.
+In general, fields in the output are separated to each other by tabs.
