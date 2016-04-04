@@ -9,7 +9,7 @@ from optparse import OptionParser
 from src.output import *
 
 GENES = 0
-ISOF = 1
+ISOFS = 1
 NONE = -1
 
 def _print_parameters(options):
