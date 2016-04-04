@@ -3,25 +3,6 @@ vcf_pick
 
 Tools to parse VCF for specific purposes
 
-##### check_polymorph
-
-It is a script which outputs only polymorphic variants between two specified lines.
-Parameters are:
-- VCF input file
-- First line/genotype to be compared
-- Second line/genotype to be compared
-- Output heterozygous variants (yes/no)
-
-Examples, filtering out heterozygous variants:
-
-`./check_polymorph.sh test/test_01.vcf Parent2 Parent42 no`
-
-##### parse_effects_genes
-
-It simply outputs the number of occurrences of each kind of SNP effect for each isoform.
-
-`./parse_effects_genes.py test/test_02_snpeff.vcf`
-
 ##### parse_contigs_variants
 
 A script which outputs polymorphic variants for each contig/chr position.
@@ -88,3 +69,22 @@ VCF_FILE: currently, only format VCFv4.1 with snpEffv4.0b has been tested.
   - detail: below each variant, a row for each allele is shown, along with the genotypes of each allele.
   - tabular: along with each variant, columns are added to include the alleles of each sample.
 In general, fields in the output are separated to each other by tabs.
+
+##### parse_effects_genes
+
+It simply outputs the number of occurrences of each kind of SNP effect for each isoform.
+
+`./parse_effects_genes.py test/test_02_snpeff.vcf`
+
+##### check_polymorph
+
+It is a script which outputs only polymorphic variants between two specified lines.
+Parameters are:
+- VCF input file
+- First line/genotype to be compared
+- Second line/genotype to be compared
+- Output heterozygous variants (yes/no)
+
+Examples, filtering out heterozygous variants:
+
+`./check_polymorph.sh test/test_01.vcf Parent2 Parent42 no`
