@@ -3,10 +3,9 @@ vcf_pick
 
 Tools to parse VCF files for specific purposes.
 
-> VCF is a text file format (most likely stored in a compressed manner). It contains meta-information lines, a header
+> "VCF is a text file format (most likely stored in a compressed manner). It contains meta-information lines, a header
 line, and then data lines each containing information about a position in the genome. The format also has the ability
-to contain genotype information on samples for each position.
-from The Variant Call Format (VCF) Version 4.1 Specification, 17 Dec 2013. Recovered from http://samtools.github.io/hts-specs/VCFv4.1.pdf 4 Apr 2016
+to contain genotype information on samples for each position." From *The Variant Call Format (VCF) Version 4.1 Specification*, 17 Dec 2013. Recovered from http://samtools.github.io/hts-specs/VCFv4.1.pdf 4 Apr 2016
 
 ##### vcf_filter
 
