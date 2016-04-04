@@ -69,6 +69,7 @@ Flags:
 - -k: cluster samples using genotypes as input for R hclust.
 
 File formats:
+
 VCF_FILE: currently, only format VCFv4.1 with snpEffv4.0b has been tested.
 - H FILENAME must contain a VCF formatted header, including the initial symbol ("#").
 - -c FILENAME, -g FILENAME, -i FILENAME, -s FILENAME: must have a single column, each row representing an accession.
