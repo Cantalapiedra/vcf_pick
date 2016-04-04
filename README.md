@@ -34,7 +34,7 @@ Parameters:
 - --maf: minimum allele frequency to output a variant (default: 0.0).
 
 Flags:
-- --het_to_miss: a flag changing the behaviour dealing with heterozygous and missing genotypes. If the flag is present and percentage of heterozygous genotypes in a variant is greater than "--max_heteros", those heterozygous genotypes will be changed to missing genotypes before assessing "--max_missing" value.
+- --het_to_miss: a flag changing the behaviour when dealing with heterozygous and missing genotypes. If the flag is present and percentage of heterozygous genotypes in a variant is greater than "--max_heteros", those heterozygous genotypes will be changed to missing genotypes before assessing "--max_missing" value.
 - -m: Output monomorphic variants along with polymorphic ones.
 - -e: Show effects (snpEff) of variants on genes.
 - -b: Output both alleles of each genotype instead of a single symbol (e.g.: 0/1 instead of "h").
@@ -62,7 +62,7 @@ Parameters:
 - --maf: minimum allele frequency to output a variant (default: 0.0).
 
 Flags:
-- --het_to_miss: a flag changing the behaviour dealing with heterozygous and missing genotypes. If the flag is present and percentage of heterozygous genotypes in a variant is greater than "--max_heteros", those heterozygous genotypes will be changed to missing genotypes before assessing "--max_missing" value.
+- --het_to_miss: a flag changing the behaviour when dealing with heterozygous and missing genotypes. If the flag is present and percentage of heterozygous genotypes in a variant is greater than "--max_heteros", those heterozygous genotypes will be changed to missing genotypes before assessing "--max_missing" value.
 - -m: Output monomorphic variants along with polymorphic ones.
 - -b: Output both alleles of each genotype instead of a single symbol (e.g.: 0/1 instead of "h").
 - -n: Assign numeric values to the genotypes. Ignored if -b flag is present.
