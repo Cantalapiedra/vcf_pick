@@ -31,22 +31,24 @@ optParser.add_option('-c', '--contigs_list', action='store', dest='contigs_list'
 optParser.add_option('-v', '--variants_list', action='store', dest='variants_list', type='string', \
                      help='')
 
-optParser.add_option('--contigs_info', action='store', dest='contigs_info', type='string')
+optParser.add_option('-s', '--samples', action='store', dest='samples_filename', type='string', \
+                     help='')
 
 optParser.add_option('-t', '--samples_translation', action='store', dest='samples_translation', type='string', \
                      help='')
 
-optParser.add_option('-f', '--output_format', action='store', dest='output_format', type='string', \
-                     help='summary or tabular')
+optParser.add_option('--contigs_info', action='store', dest='contigs_info', type='string')
 
-optParser.add_option('-s', '--samples', action='store', dest='samples_filename', type='string', \
-                     help='')
+optParser.add_option('-f', '--output_format', action='store', dest='output_format', type='string', \
+                     help='summary, detail or tabular')
 
 optParser.add_option('--max_missing', action='store', dest='max_missing', type='float', help='')
 
 optParser.add_option('--max_heteros', action='store', dest='max_heteros', type='float', help='')
 
 optParser.add_option('--maf', action='store', dest='maf', type='float', help='')
+
+optParser.add_option('--het_to_miss', action='store_true', dest='het_to_miss', help='')
 
 optParser.add_option('-m', '--show_monomorph', action='store_true', dest='show_monomorph', help='')
 
@@ -96,6 +98,9 @@ else: max_missing = 1.0
 
 if options.max_heteros or options.max_heteros == 0.0: max_heteros = options.max_heteros
 else: max_heteros = 1.0
+
+if options.het_to_miss: het_to_miss = True
+else: het_to_miss = False
 
 if options.maf or options.maf == 0.0: maf = options.maf
 else: maf = 0.0
@@ -200,7 +205,8 @@ try:
         
         variant_dict['alleles'] = alleles
         
-        ok_variant = preprocess_variant(alleles, max_heteros, max_missing, show_monomorph, maf, biallelic)
+        ok_variant = preprocess_variant(alleles, max_heteros, max_missing, show_monomorph, maf, \
+                                        biallelic, het_to_miss)
         if ok_variant:
             variants_dict[var_id] = variant_dict
             total_output += 1

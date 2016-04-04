@@ -167,7 +167,7 @@ def print_variants_contigs(variants_dict, genotypes_dict, names_dict, samples_li
     sys.stdout.write("\t".join(header_list))
     
     if output_fmt == "tabular":
-        if cluster_samples:
+        if cluster_samples and len(outputs_list)>0:
             samples_rows = f_get_samples_rows(outputs_list, samples_list, genotypes_dict, names_dict, biallelic)
             samples_list = f_cluster_samples(samples_rows, biallelic)
         # else: samples_list = samples_list
@@ -254,7 +254,7 @@ def print_variants_genes(variants_dict, genotypes_dict, names_dict, samples_list
     sys.stdout.write("\t".join(header_list))
     
     if output_fmt == "tabular":
-        if cluster_samples:
+        if cluster_samples and len(outputs_list)>0:
             samples_rows = f_get_samples_rows(outputs_list, samples_list, genotypes_dict, names_dict, biallelic)
             samples_list = f_cluster_samples(samples_rows, biallelic)
         # else: samples_list = samples_list

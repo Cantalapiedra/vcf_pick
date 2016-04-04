@@ -280,7 +280,8 @@ def parse_biallelic(genotype):
 ##
 
  # Heteros --> missing; missing --> rm; monomorph --> rm
-def preprocess_variant(alleles, max_heteros, max_missing, show_monomorph, maf = 0.0, alleles_output = "mono"):
+def preprocess_variant(alleles, max_heteros, max_missing, show_monomorph, maf = 0.0, \
+                       alleles_output = "mono", het_to_miss = True):
     retValue = True
     
     genotypes_keys = set(alleles)
@@ -292,26 +293,30 @@ def preprocess_variant(alleles, max_heteros, max_missing, show_monomorph, maf = 
         num_genotypes = get_num_genotypes(num_alleles, alleles_output)
         
         # Heteros --> missing
-        percent_heteros = preprocess_heteros(alleles, genotypes_keys, num_genotypes, max_heteros, alleles_output)
+        percent_heteros = preprocess_heteros(alleles, genotypes_keys, num_genotypes, max_heteros, \
+                                             alleles_output, het_to_miss)
         
-        genotypes_keys = set(alleles)
-        
-        num_alleles = get_num_alleles(alleles, alleles_output)
-        num_genotypes = get_num_genotypes(num_alleles, alleles_output)
-        
-        if len(genotypes_keys) <= 1 and not show_monomorph:
+        if (not het_to_miss) and percent_heteros > max_heteros:
             retValue = False
         else:
-            percent_miss = calculate_percent_miss(genotypes_keys, alleles, num_genotypes, alleles_output)
+            genotypes_keys = set(alleles)
             
-            if percent_miss > max_missing:
+            num_alleles = get_num_alleles(alleles, alleles_output)
+            num_genotypes = get_num_genotypes(num_alleles, alleles_output)
+            
+            if len(genotypes_keys) <= 1 and not show_monomorph:
                 retValue = False
             else:
-                ## MAF
-                alleles_keys = get_alleles_keys(genotypes_keys, alleles_output)
-                alleles_maf = calculate_maf(alleles_keys, alleles, num_alleles, alleles_output)
-                if alleles_maf < maf:
+                percent_miss = calculate_percent_miss(genotypes_keys, alleles, num_genotypes, alleles_output)
+                
+                if percent_miss > max_missing:
                     retValue = False
+                else:
+                    ## MAF
+                    alleles_keys = get_alleles_keys(genotypes_keys, alleles_output)
+                    alleles_maf = calculate_maf(alleles_keys, alleles, num_alleles, alleles_output)
+                    if alleles_maf < maf:
+                        retValue = False
     
     #print "\t"+str(alleles)+"\t"+str(retValue)
     
@@ -366,26 +371,26 @@ def get_alleles_keys(genotypes_keys, alleles_output):
 
 ##
 
-def preprocess_heteros(alleles, genotypes_keys, num_genotypes, max_heteros, alleles_output):
+def preprocess_heteros(alleles, genotypes_keys, num_genotypes, max_heteros, alleles_output, het_to_miss = True):
     percent_heteros = 0
     
     if alleles_output == "mono":
-        percent_heteros = preprocess_heteros_mono(alleles, genotypes_keys, num_genotypes, max_heteros)
+        percent_heteros = preprocess_heteros_mono(alleles, genotypes_keys, num_genotypes, max_heteros, het_to_miss)
     elif alleles_output == "bi":
-        percent_heteros = preprocess_heteros_bi(alleles, genotypes_keys, num_genotypes, max_heteros)
+        percent_heteros = preprocess_heteros_bi(alleles, genotypes_keys, num_genotypes, max_heteros, het_to_miss)
     else:
         raise Exception("Unrecognized allele output option "+str(alleles_output)+".")
     
     return percent_heteros
 
-def preprocess_heteros_mono(alleles, genotypes_keys, num_genotypes, max_heteros):
+def preprocess_heteros_mono(alleles, genotypes_keys, num_genotypes, max_heteros, het_to_miss = True):
     percent_heteros = 0
     
     ## Heteros --> missing
     if HETERO in genotypes_keys:
         percent_heteros = len(alleles[HETERO]) * 1.0 / num_genotypes
     
-    if percent_heteros > max_heteros:
+    if het_to_miss and percent_heteros > max_heteros:
         if MISS not in alleles:
             alleles[MISS] = []
         alleles[MISS] = alleles[MISS] + alleles[HETERO]
@@ -393,7 +398,7 @@ def preprocess_heteros_mono(alleles, genotypes_keys, num_genotypes, max_heteros)
     
     return percent_heteros
 
-def preprocess_heteros_bi(alleles, genotypes_keys, num_genotypes, max_heteros):
+def preprocess_heteros_bi(alleles, genotypes_keys, num_genotypes, max_heteros, het_to_miss = True):
     percent_heteros = 0
     
     ## Heteros --> missing
@@ -407,7 +412,7 @@ def preprocess_heteros_bi(alleles, genotypes_keys, num_genotypes, max_heteros):
     
     percent_heteros = num_heteros * 1.0 / num_genotypes
     
-    if percent_heteros > max_heteros:
+    if het_to_miss and percent_heteros > max_heteros:
         missing = MISS+VCF_ALLELES_SEP+MISS
         if missing not in alleles:
             alleles[missing] = []

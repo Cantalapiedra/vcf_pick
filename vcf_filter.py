@@ -40,10 +40,10 @@ optParser.add_option('-g', '--genes_list', action='store', dest='genes_list', ty
 optParser.add_option('-i', '--isof_list', action='store', dest='isof_list', type='string', \
                      help='')
 
-optParser.add_option('-t', '--samples_translation', action='store', dest='samples_translation', type='string', \
+optParser.add_option('-s', '--samples', action='store', dest='samples_filename', type='string', \
                      help='')
 
-optParser.add_option('-s', '--samples', action='store', dest='samples_filename', type='string', \
+optParser.add_option('-t', '--samples_translation', action='store', dest='samples_translation', type='string', \
                      help='')
 
 (options, arguments) = optParser.parse_args()
