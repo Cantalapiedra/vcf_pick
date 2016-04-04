@@ -3,6 +3,9 @@
 
 ## CPCantalapiedra - EEAD - CSIC - 2016
 
+## TODO:
+# Make use of cyvcf https://github.com/arq5x/cyvcf based on https://github.com/jamescasbon/PyVCF
+
 import sys, traceback
 from optparse import OptionParser
 
