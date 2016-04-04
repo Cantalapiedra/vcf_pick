@@ -70,13 +70,13 @@ Flags:
 
 File formats:
 VCF_FILE: currently, only format VCFv4.1 with snpEffv4.0b has been tested.
--H FILENAME must contain a VCF formatted header, including the initial symbol ("#").
--c FILENAME, -g FILENAME, -i FILENAME, -s FILENAME: must have a single column, each row representing an accession.
--v FILENAME: must have 2 columns, each row containing contig/chr and position, tab separated.
--t FILENAME: must contain 2 tab separated columns, first one corresponding to the sample name in the VCF file, second one corresponding to the sample name to be output.
---contigs_info FILENAME: should contain the contig/chr name in the first column, followed by additional fields to be output, tab separated. Please, be sure that all the rows in this file have exactly the same number of columns.
---genes_info FILENAME: should contain the gene/isoform name in the first column, followed by additional fields to be output, tab separated. Please, be sure that all the rows in this file have exactly the same number of columns.
--f OUTPUT_FORMAT:
+- H FILENAME must contain a VCF formatted header, including the initial symbol ("#").
+- -c FILENAME, -g FILENAME, -i FILENAME, -s FILENAME: must have a single column, each row representing an accession.
+- -v FILENAME: must have 2 columns, each row containing contig/chr and position, tab separated.
+- -t FILENAME: must contain 2 tab separated columns, first one corresponding to the sample name in the VCF file, second one corresponding to the sample name to be output.
+- --contigs_info FILENAME: should contain the contig/chr name in the first column, followed by additional fields to be output, tab separated. Please, be sure that all the rows in this file have exactly the same number of columns.
+- --genes_info FILENAME: should contain the gene/isoform name in the first column, followed by additional fields to be output, tab separated. Please, be sure that all the rows in this file have exactly the same number of columns.
+- -f OUTPUT_FORMAT:
   - summary: output only the variants, without alleles or genotypes.
   - detail: below each variant, a row for each allele is shown, along with the genotypes of each allele.
   - tabular: along with each variant, columns are added to include the alleles of each sample.
