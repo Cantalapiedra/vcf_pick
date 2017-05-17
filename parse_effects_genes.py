@@ -28,6 +28,8 @@ try:
             # The split(";")[0] is to avoid fields beyond EFF= (like LOF=)
             effs_list = info.split("EFF=")[1].split(";")[0].split(",")
             
+            #sys.stderr.write(str(effs_list)+"\n")
+            
             for eff in effs_list:
                 total_effects += 1
                 eff_data = eff.split("(")
@@ -42,12 +44,14 @@ try:
                 
                 if eff_gene in genes_dict:
                     gene_dict = genes_dict[eff_gene]
+                    
                     if eff_isof in gene_dict:
                         isof_dict = gene_dict[eff_isof]
+                        
                         if eff_type in isof_dict:
                             isof_dict[eff_type] += 1
                         else:
-                            isof_dict = {eff_type:1}
+                            isof_dict[eff_type] = 1
                     else:
                         isof_dict = {eff_type:1}
                         gene_dict[eff_isof] = isof_dict
@@ -64,6 +68,8 @@ except Exception as e:
     sys.exit(-1)
 finally:
     vcf_file.close()
+
+#sys.stderr.write("**********************\n"+str(genes_dict)+"\n***********************\n\n")
 
 for gene in genes_dict:
     gene_dict = genes_dict[gene]
